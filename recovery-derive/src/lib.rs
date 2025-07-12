@@ -9,7 +9,7 @@ pub fn recovery_derive(tokens: TokenStream) -> TokenStream {
     } = parse_macro_input!(tokens);
 
     let syn::Data::Enum(data) = data else {
-        panic!("Recovery only supports enums");
+        panic!("#[derive(Recovery)] only supports enums");
     };
 
     let default_recovery = find_recovery_attr(&attrs);
@@ -24,20 +24,47 @@ pub fn recovery_derive(tokens: TokenStream) -> TokenStream {
         } = variant;
 
         let recovery_strategy = find_recovery_attr(&attrs)
-            .or_else(|| default_recovery.clone())
+            .or(default_recovery)
             .unwrap_or_else(|| {
                 panic!("Please add #[recovery(...)] for {ident} or an enum-level default")
             });
 
-        variants.push(match fields {
-            syn::Fields::Named(_) => {
-                quote! { Self::#ident{..} => #recovery_strategy }
+        variants.push(match (fields, recovery_strategy) {
+            (syn::Fields::Named(_), DeriveStrategy::Transparent) => {
+                panic!("#[recovery(transparent)] is not supported for variants with named fields");
             }
-            syn::Fields::Unnamed(_) => {
-                quote! { Self::#ident(..) => #recovery_strategy }
+            (syn::Fields::Named(_), DeriveStrategy::Auto) => {
+                quote! { Self::#ident{..} => recovery::RecoveryStrategy::Auto }
             }
-            syn::Fields::Unit => {
-                quote! { Self::#ident => #recovery_strategy }
+            (syn::Fields::Named(_), DeriveStrategy::Manual) => {
+                quote! { Self::#ident{..} => recovery::RecoveryStrategy::Manual }
+            }
+            (syn::Fields::Named(_), DeriveStrategy::Never) => {
+                quote! { Self::#ident{..} => recovery::RecoveryStrategy::Never }
+            }
+            (syn::Fields::Unnamed(_), DeriveStrategy::Transparent) => {
+                quote! { Self::#ident(field, ..) => field.recovery() }
+            }
+            (syn::Fields::Unnamed(_), DeriveStrategy::Auto) => {
+                quote! { Self::#ident(..) => recovery::RecoveryStrategy::Auto }
+            }
+            (syn::Fields::Unnamed(_), DeriveStrategy::Manual) => {
+                quote! { Self::#ident(..) => recovery::RecoveryStrategy::Manual }
+            }
+            (syn::Fields::Unnamed(_), DeriveStrategy::Never) => {
+                quote! { Self::#ident(..) => recovery::RecoveryStrategy::Never }
+            }
+            (syn::Fields::Unit, DeriveStrategy::Transparent) => {
+                panic!("#[recovery(transparent)] is not supported for unit variants");
+            }
+            (syn::Fields::Unit, DeriveStrategy::Auto) => {
+                quote! { Self::#ident => recovery::RecoveryStrategy::Auto }
+            }
+            (syn::Fields::Unit, DeriveStrategy::Manual) => {
+                quote! { Self::#ident => recovery::RecoveryStrategy::Manual }
+            }
+            (syn::Fields::Unit, DeriveStrategy::Never) => {
+                quote! { Self::#ident => recovery::RecoveryStrategy::Never }
             }
         });
     }
@@ -54,25 +81,38 @@ pub fn recovery_derive(tokens: TokenStream) -> TokenStream {
     .into()
 }
 
-fn find_recovery_attr(attrs: &[Attribute]) -> Option<proc_macro2::TokenStream> {
+fn find_recovery_attr(attrs: &[Attribute]) -> Option<DeriveStrategy> {
     let attr = attrs.iter().find(|attr| attr.path().is_ident("recovery"))?;
 
-    let mut result = quote! {};
+    let mut result = None;
     attr.parse_nested_meta(|meta| match meta.path.get_ident() {
+        Some(ident) if ident == "transparent" => {
+            result = Some(DeriveStrategy::Transparent);
+            Ok(())
+        }
         Some(ident) if ident == "auto" => {
-            result = quote! { recovery::RecoveryStrategy::Auto };
+            result = Some(DeriveStrategy::Auto);
             Ok(())
         }
         Some(ident) if ident == "manual" => {
-            result = quote! { recovery::RecoveryStrategy::Manual };
+            result = Some(DeriveStrategy::Manual);
             Ok(())
         }
         Some(ident) if ident == "never" => {
-            result = quote! { recovery::RecoveryStrategy::Never };
+            result = Some(DeriveStrategy::Never);
             Ok(())
         }
-        Some(_) | None => Err(meta.error("One of \"auto\", \"manual\" or \"never\" is required")),
+        Some(_) | None => Err(meta
+            .error("One of these is required: \"auto\", \"manual\", \"never\", \"transparent\"")),
     })
     .unwrap();
-    Some(result)
+    result
+}
+
+#[derive(Clone, Copy)]
+enum DeriveStrategy {
+    Transparent,
+    Auto,
+    Manual,
+    Never,
 }

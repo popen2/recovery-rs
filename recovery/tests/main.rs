@@ -1,33 +1,72 @@
-use recovery::{Recovery, RecoveryStrategy};
-
-#[derive(Recovery)]
-#[recovery(never)]
-enum Error {
+#[derive(recovery::Recovery)]
+enum PrimaryError {
     #[recovery(auto)]
     Temporary,
     #[recovery(manual)]
     Maybe,
+
+    #[recovery(never)]
     Fatal,
+    #[recovery(never)]
     Fatal2((), #[allow(dead_code)] i32),
+    #[recovery(never)]
     Fatal3 {
         #[allow(dead_code)]
         field1: String,
         #[allow(dead_code)]
         field2: bool,
     },
+
+    #[recovery(transparent)]
+    Secondary(SecondaryError),
+
+    #[recovery(transparent)]
+    WithDefault(WithDefault),
+}
+
+#[derive(recovery::Recovery)]
+enum SecondaryError {
+    #[recovery(auto)]
+    SecondaryAuto,
+}
+
+#[derive(recovery::Recovery)]
+#[recovery(never)]
+enum WithDefault {
+    A,
+    B,
 }
 
 fn main() {
-    assert_eq!(Error::Temporary.recovery(), RecoveryStrategy::Auto);
-    assert_eq!(Error::Maybe.recovery(), RecoveryStrategy::Manual);
-    assert_eq!(Error::Fatal.recovery(), RecoveryStrategy::Never);
-    assert_eq!(Error::Fatal2((), 2).recovery(), RecoveryStrategy::Never);
+    use recovery::{Recovery, RecoveryStrategy};
+
+    assert_eq!(PrimaryError::Temporary.recovery(), RecoveryStrategy::Auto);
+    assert_eq!(PrimaryError::Maybe.recovery(), RecoveryStrategy::Manual);
+    assert_eq!(PrimaryError::Fatal.recovery(), RecoveryStrategy::Never);
     assert_eq!(
-        Error::Fatal3 {
+        PrimaryError::Fatal2((), 2).recovery(),
+        RecoveryStrategy::Never
+    );
+    assert_eq!(
+        PrimaryError::Fatal3 {
             field1: "field1".into(),
             field2: false,
         }
         .recovery(),
+        RecoveryStrategy::Never
+    );
+
+    assert_eq!(
+        PrimaryError::Secondary(SecondaryError::SecondaryAuto).recovery(),
+        RecoveryStrategy::Auto
+    );
+
+    assert_eq!(
+        PrimaryError::WithDefault(WithDefault::A).recovery(),
+        RecoveryStrategy::Never
+    );
+    assert_eq!(
+        PrimaryError::WithDefault(WithDefault::B).recovery(),
         RecoveryStrategy::Never
     );
 }
