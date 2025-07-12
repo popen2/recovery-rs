@@ -13,11 +13,6 @@ jobs:
       - name: 🛠 Checkout
         uses: actions/checkout@v4
 
-      - name: 📦 Install Cargo
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
       - name: 🧪 Test
         run: |
           cd recovery
@@ -25,13 +20,15 @@ jobs:
           cargo test --release
 
       - name: 🚀 Publish crate (recovery-derive)
-        uses: katyo/publish-crates@v1
-        with:
-          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-          path: recovery-derive
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          cd recovery-derive
+          cargo publish
 
       - name: 🚀 Publish crate (recovery)
-        uses: katyo/publish-crates@v1
-        with:
-          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-          path: recovery
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          cd recovery
+          cargo publish
