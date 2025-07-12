@@ -1,0 +1,9 @@
+[package]
+name = "recovery"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+homepage = "https://github.com/popen2/recovery-rs"
+
+[dependencies]
+recovery-derive = { path = "../recovery-derive", version = "0.1.0" }
