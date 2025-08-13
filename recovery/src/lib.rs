@@ -1,4 +1,4 @@
-#![doc = include_str!("../../README.md")]
+#![doc = include_str!("../README.md")]
 pub use recovery_derive::Recovery;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

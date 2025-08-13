@@ -1,11 +1,11 @@
 [package]
 name = "recovery"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 license = "MIT"
 homepage = "https://github.com/popen2/recovery-rs"
 description = "Trait and derive macros to declare how errors should be retried"
-readme = "../README.md"
+readme = "README.md"
 
 [dependencies]
-recovery-derive = { path = "../recovery-derive", version = "0.1.4" }
+recovery-derive = { path = "../recovery-derive", version = "0.1.5" }
