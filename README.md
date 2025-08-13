@@ -6,7 +6,7 @@ Trait and derive macros to declare how errors should be retried.
 
 This crate exports a trait that returns how an error should be retried:
 
-```rust
+```rust,ignore
 pub trait Recovery {
     fn recovery(&self) -> RecoveryStrategy;
 }
@@ -39,6 +39,8 @@ pub enum MyError {
 The macro also supports a default option if none is defined for one of the variants:
 
 ```rust
+use recovery::Recovery;
+
 #[derive(Recovery)]
 #[recovery(never)]
 pub enum Nah {
@@ -53,6 +55,8 @@ pub enum Nah {
 Finally, you can use `#[recovery(transparent)]` to use an internal variable's `Recovery` implementation:
 
 ```rust
+use recovery::Recovery;
+
 #[derive(Recovery)]
 pub enum Outer {
     #[recovery(transparent)]

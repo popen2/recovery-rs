@@ -22,14 +22,14 @@ dependencies = [
 
 [[package]]
 name = "recovery"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "recovery-derive",
 ]
 
 [[package]]
 name = "recovery-derive"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "proc-macro2",
  "quote",

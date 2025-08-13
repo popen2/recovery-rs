@@ -1,3 +1,6 @@
+//! A derive macro for the `recovery` trait.
+//!
+//! Please see the docs for the `recovery` crate for more information on how to use it.
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Attribute, DeriveInput, parse_macro_input};
