@@ -8,8 +8,13 @@ use syn::{Attribute, DeriveInput, parse_macro_input};
 #[proc_macro_derive(Recovery, attributes(recovery))]
 pub fn recovery_derive(tokens: TokenStream) -> TokenStream {
     let DeriveInput {
-        attrs, ident, data, ..
+        attrs,
+        ident,
+        data,
+        generics,
+        ..
     } = parse_macro_input!(tokens);
+    let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
 
     let syn::Data::Enum(data) = data else {
         panic!("#[derive(Recovery)] only supports enums");
@@ -73,7 +78,7 @@ pub fn recovery_derive(tokens: TokenStream) -> TokenStream {
     }
 
     quote! {
-        impl recovery::Recovery for #ident {
+        impl #impl_generics recovery::Recovery for #ident #type_generics #where_clause {
             fn recovery(&self) -> recovery::RecoveryStrategy {
                 match self {
                     #( #variants, )*

@@ -37,6 +37,15 @@ enum WithDefault {
     B,
 }
 
+#[derive(recovery::Recovery)]
+enum WithGenerics<G> {
+    #[recovery(transparent)]
+    WithDefault(WithDefault),
+
+    #[recovery(auto)]
+    Result(Result<G, ()>),
+}
+
 fn main() {
     use recovery::{Recovery, RecoveryStrategy};
 
@@ -68,5 +77,15 @@ fn main() {
     assert_eq!(
         PrimaryError::WithDefault(WithDefault::B).recovery(),
         RecoveryStrategy::Never
+    );
+
+    assert_eq!(
+        WithGenerics::<u64>::WithDefault(WithDefault::A).recovery(),
+        RecoveryStrategy::Never
+    );
+
+    assert_eq!(
+        WithGenerics::<u64>::Result(Result::Ok(5)).recovery(),
+        RecoveryStrategy::Auto
     );
 }
